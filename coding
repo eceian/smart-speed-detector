@@ -1,0 +1,67 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+#define trigPin 9
+#define echoPin 10
+#define buzzer 8
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+long duration;
+float distance1, distance2;
+float speed_cm_s, speed_km_h;
+
+float getDistance() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  duration = pulseIn(echoPin, HIGH);
+  return (duration * 0.034) / 2;
+}
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzer, OUTPUT);
+
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0, 0);
+  lcd.print("Car Speed Meter");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+  distance1 = getDistance();
+  delay(100);   // time gap
+  distance2 = getDistance();
+
+  speed_cm_s = (distance1 - distance2) / 0.1; // cm/sec
+  speed_km_h = speed_cm_s * 0.036;            // km/hr
+
+  if (speed_km_h < 0) speed_km_h = 0;
+
+  lcd.setCursor(0, 0);
+  lcd.print("Speed: ");
+  lcd.print(speed_km_h);
+  lcd.print(" Km/h ");
+
+  if (speed_km_h >= 60) {
+    digitalWrite(buzzer, HIGH);
+    lcd.setCursor(0, 1);
+    lcd.print("HIGH SPEED ALERT");
+  } 
+  else {
+    digitalWrite(buzzer, LOW);
+    lcd.setCursor(0, 1);
+    lcd.print("Safe Speed      ");
+  }
+
+  delay(300);
+}
